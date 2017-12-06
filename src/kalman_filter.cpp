@@ -42,18 +42,7 @@ void KalmanFilter::Update(const VectorXd &z) {
     MatrixXd Si = S_.inverse();
     MatrixXd K_ = P_ * Ht * Si;
     
-    x_ = x_ + K_* y;
-    long x_size = x_.size();
-    MatrixXd I_ = MatrixXd::Identity(x_size, x_size);
-    P_ = (I_ - K_ * H_)*P_;
-
-}
-
-void KalmanFilter::UpdateEKF(const VectorXd &z) {
-  /**
-  TODO:
-    * update the state by using Extended Kalman Filter equations
-  */
+    
     float px = x_(0);
     float py = x_(1);
     float vx = x_(2);
@@ -70,8 +59,43 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
     {
         px = eps;
     }
-    float rho = sqrt(px*px+py*py);
-    float phi = atan2(py,px);
+    
+    x_ = x_ + (K_* y);
+    long x_size = x_.size();
+    MatrixXd I_ = MatrixXd::Identity(x_size, x_size);
+    P_ = (I_ - K_ * H_)*P_;
+
+}
+
+void KalmanFilter::UpdateEKF(const VectorXd &z) {
+  /**
+  TODO:
+    * update the state by using Extended Kalman Filter equations
+  */
+    float px = x_(0);
+    float py = x_(1);
+    float vx = x_(2);
+    float vy = x_(3);
+    
+    
+    float rho = sqrtf(px*px+py*py);
+    if (rho<0.0001) {
+        rho=0.0001;
+    }
+    
+    //float eps = 0.0001;
+    //if (px<eps && py<eps)
+    //{
+    //    px = eps;
+    //    py = eps;
+    //
+    //}
+    //else if (px<eps)
+    //{
+    //    px = eps;
+    //}
+   
+    float phi = atan2f(py,px);
     float rho_dot = (px * vx + py *vy)/rho;
     
     VectorXd Hx(3);
@@ -79,6 +103,7 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
     
     MatrixXd Ht = H_.transpose();
     VectorXd y = z - Hx;
+    y[1]=atan2f(sin(y[1]),cos(y[1]));
     MatrixXd S_ = H_ * P_ * Ht + R_;
     MatrixXd K_ = P_ * Ht * S_.inverse();
     long size = x_.size();
